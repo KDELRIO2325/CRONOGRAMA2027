@@ -142,7 +142,7 @@ mark{background:#f59e0b33;color:#fde68a;border-radius:2px;padding:0 1px}
     </div>
     <div id="cyclesScroll"></div>
     <div id="sbAvg">
-      <div class="avg-title">Promedio global (todos los Paq)</div>
+      <div class="avg-title" id="avgTitle">Promedio global (todos los Paq)</div>
       <div id="avgRows"></div>
     </div>
   </div>
@@ -233,6 +233,16 @@ function updateSidebar(){
     scrl.innerHTML='<div style="padding:20px;text-align:center;color:#475569;font-size:12px">Selecciona al menos un Paq</div>';
     return;
   }
+  // Calcular promedios dinámicos solo de los PAQ seleccionados
+  const dynAvgs={};
+  CYCLE_KEYS.forEach(k=>{
+    const vals=sel.map(p=>CYCLES[p]&&CYCLES[p][k]!=null?CYCLES[p][k]:null).filter(v=>v!==null);
+    dynAvgs[k]=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0;
+  });
+  // Actualizar título según selección
+  const allSelected=sel.length===ALL_PAQS.length;
+  const titleEl=document.getElementById('avgTitle');
+  if(titleEl)titleEl.textContent=allSelected?'Promedio global (todos los Paq)':'Promedio Paq seleccionados ('+sel.join(', ')+')';
   const maxVals={};
   CYCLE_KEYS.forEach(k=>{
     const vals=sel.map(p=>CYCLES[p]&&CYCLES[p][k]!=null?CYCLES[p][k]:0);
@@ -248,7 +258,7 @@ function updateSidebar(){
     bars.className='cyc-bars';
     CYCLE_KEYS.forEach(k=>{
       const val=cyc[k]!=null?cyc[k]:null;
-      const avg=AVGS[k];
+      const avg=dynAvgs[k];
       const pct=val!=null?Math.round((val/maxVals[k])*100):0;
       const avgPct=Math.round((avg/maxVals[k])*100);
       const cls=val!=null?(val>avg+0.2?'val-hi':val<avg-0.2?'val-lo':'val-ok'):'val-ok';
@@ -277,13 +287,13 @@ function updateSidebar(){
   CYCLE_KEYS.forEach(k=>{
     const d=document.createElement('div');
     d.className='avg-row2';
-    d.innerHTML=`<span class="avg-lbl2">${CYCLE_LBL[k]}</span><span class="avg-val2">${AVGS[k].toFixed(2)} m</span>`;
+    d.innerHTML=`<span class="avg-lbl2">${CYCLE_LBL[k]}</span><span class="avg-val2">${dynAvgs[k].toFixed(2)} m</span>`;
     avgDiv.appendChild(d);
   });
   const sep=document.createElement('div');
   sep.style.cssText='height:1px;background:#1e3a5f;margin:5px 0';
   avgDiv.appendChild(sep);
-  const avgTotal=TOT_KEYS.reduce((s,k)=>s+AVGS[k],0);
+  const avgTotal=TOT_KEYS.reduce((s,k)=>s+dynAvgs[k],0);
   const tot=document.createElement('div');
   tot.className='avg-row2';
   tot.innerHTML=`<span class="avg-lbl2" style="color:#fde68a;font-weight:700">Total OTB+Diseño+PCC</span><span class="avg-val2" style="color:#fde68a;font-size:13px">${avgTotal.toFixed(2)} m</span>`;
